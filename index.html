@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Object Recognition App</title>
+    <!-- Load TensorFlow.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <!-- Load the COCO-SSD model -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            position: relative;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Header styles */
+        header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            z-index: 10;
+        }
+        
+        .language-selector {
+            padding: 8px 12px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 20px;
+            color: white;
+            font-size: 16px;
+            outline: none;
+            min-width: 120px;
+        }
+        
+        .language-selector option {
+            background-color: #333;
+            color: white;
+        }
+        
+        /* Camera/video container */
+        #video-container {
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+            background-color: #000;
+            z-index: 1;
+        }
+        
+        #webcam {
+            position: absolute;
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            object-fit: cover;
+        }
+        
+        #canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+        }
+        
+        /* Bottom bar styles */
+        .bottom-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 80px;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            padding: 0 16px;
+            z-index: 10;
+        }
+        
+        .bottom-button {
+            background: transparent;
+            border: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+        }
+        
+        .button-icon {
+            width: 24px;
+            height: 24px;
+            margin-bottom: 4px;
+            fill: currentColor;
+        }
+        
+        .capture-button {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: white;
+            border: 3px solid rgba(255, 255, 255, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .capture-button-inner {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: white;
+        }
+        
+        /* Results panel */
+        #result-container {
+            position: absolute;
+            bottom: 80px;
+            left: 0;
+            right: 0;
+            max-height: 50%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 5;
+            overflow-y: auto;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+        }
+        
+        #result-container.show {
+            transform: translateY(0);
+        }
+        
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .english {
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        .translated {
+            font-weight: bold;
+            color: white;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        /* Status message */
+        #status-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 16px;
+            border-radius: 8px;
+            color: white;
+            z-index: 20;
+            max-width: 80%;
+            text-align: center;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <select class="language-selector" id="language-selector">
+            <option value="fr">French</option>
+            <!-- Other languages will be added later -->
+        </select>
+    </header>
+
+    <div id="video-container">
+        <video id="webcam" autoplay playsinline></video>
+        <canvas id="canvas"></canvas>
+    </div>
+    
+    <div id="status-message"></div>
+    
+    <div id="result-container">
+        <div id="results"></div>
+    </div>
+
+    <div class="bottom-bar">
+        <button class="bottom-button" id="gallery-btn">
+            <svg class="button-icon" viewBox="0 0 24 24">
+                <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+            </svg>
+            Gallery
+        </button>
+        
+        <button class="capture-button" id="capture-btn">
+            <div class="capture-button-inner"></div>
+        </button>
+        
+        <button class="bottom-button" id="menu-btn">
+            <svg class="button-icon" viewBox="0 0 24 24">
+                <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+            </svg>
+            Menu
+        </button>
+    </div>
+
+    <script>
+        // French translations for common objects
+        const translations = {
+            "fr": {
+                "person": "personne",
+                "bicycle": "vélo",
+                "car": "voiture",
+                "motorcycle": "moto",
+                "airplane": "avion",
+                "bus": "bus",
+                "train": "train",
+                "truck": "camion",
+                "boat": "bateau",
+                "traffic light": "feu de circulation",
+                "fire hydrant": "bouche d'incendie",
+                "stop sign": "panneau stop",
+                "parking meter": "parcmètre",
+                "bench": "banc",
+                "bird": "oiseau",
+                "cat": "chat",
+                "dog": "chien",
+                "horse": "cheval",
+                "sheep": "mouton",
+                "cow": "vache",
+                "elephant": "éléphant",
+                "bear": "ours",
+                "zebra": "zèbre",
+                "giraffe": "girafe",
+                "backpack": "sac à dos",
+                "umbrella": "parapluie",
+                "handbag": "sac à main",
+                "tie": "cravate",
+                "suitcase": "valise",
+                "frisbee": "frisbee",
+                "skis": "skis",
+                "snowboard": "snowboard",
+                "sports ball": "ballon de sport",
+                "kite": "cerf-volant",
+                "baseball bat": "batte de baseball",
+                "baseball glove": "gant de baseball",
+                "skateboard": "skateboard",
+                "surfboard": "planche de surf",
+                "tennis racket": "raquette de tennis",
+                "bottle": "bouteille",
+                "wine glass": "verre à vin",
+                "cup": "tasse",
+                "fork": "fourchette",
+                "knife": "couteau",
+                "spoon": "cuillère",
+                "bowl": "bol",
+                "banana": "banane",
+                "apple": "pomme",
+                "sandwich": "sandwich",
+                "orange": "orange",
+                "broccoli": "brocoli",
+                "carrot": "carotte",
+                "hot dog": "hot-dog",
+                "pizza": "pizza",
+                "donut": "beignet",
+                "cake": "gâteau",
+                "chair": "chaise",
+                "couch": "canapé",
+                "potted plant": "plante en pot",
+                "bed": "lit",
+                "dining table": "table à manger",
+                "toilet": "toilettes",
+                "tv": "télévision",
+                "laptop": "ordinateur portable",
+                "mouse": "souris",
+                "remote": "télécommande",
+                "keyboard": "clavier",
+                "cell phone": "téléphone portable",
+                "microwave": "micro-ondes",
+                "oven": "four",
+                "toaster": "grille-pain",
+                "sink": "évier",
+                "refrigerator": "réfrigérateur",
+                "book": "livre",
+                "clock": "horloge",
+                "vase": "vase",
+                "scissors": "ciseaux",
+                "teddy bear": "ours en peluche",
+                "hair drier": "sèche-cheveux",
+                "toothbrush": "brosse à dents"
+            }
+        };
+        
+        const video = document.getElementById('webcam');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const captureBtn = document.getElementById('capture-btn');
+        const galleryBtn = document.getElementById('gallery-btn');
+        const menuBtn = document.getElementById('menu-btn');
+        const resultContainer = document.getElementById('result-container');
+        const results = document.getElementById('results');
+        const languageSelector = document.getElementById('language-selector');
+        const statusMessage = document.getElementById('status-message');
+        
+        let model;
+        let stream;
+        let usingSampleImage = false;
+        let currentLanguage = 'fr';
+        let isProcessing = false;
+        
+        // Function to show status message
+        const showStatus = (message, duration = 3000) => {
+            statusMessage.textContent = message;
+            statusMessage.style.display = 'block';
+            
+            if (duration > 0) {
+                setTimeout(() => {
+                    statusMessage.style.display = 'none';
+                }, duration);
+            }
+        };
+        
+        // Load the COCO-SSD model
+        const loadModel = async () => {
+            showStatus('Loading object recognition model...', 0);
+            try {
+                model = await cocoSsd.load();
+                showStatus('Model loaded!', 2000);
+            } catch (error) {
+                console.error('Model loading error:', error);
+                showStatus('Error loading model: ' + error.message);
+            }
+        };
+        
+        // Start the webcam
+        const startCamera = async () => {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: { 
+                        facingMode: 'environment',
+                        width: { ideal: window.innerWidth },
+                        height: { ideal: window.innerHeight }
+                    },
+                    audio: false
+                });
+                video.srcObject = stream;
+                
+                // Set canvas dimensions after video loads
+                video.onloadedmetadata = () => {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                };
+                
+                // Load the model after camera is ready
+                await loadModel();
+                
+            } catch (error) {
+                console.error('Camera error:', error);
+                if (error.name === 'NotAllowedError') {
+                    showStatus('Camera access denied. Please allow camera access and reload the page.');
+                } else if (error.name === 'NotFoundError') {
+                    showStatus('No camera found. Please ensure your device has a camera.');
+                } else if (error.name === 'NotReadableError') {
+                    showStatus('Camera already in use by another application.');
+                } else if (error.name === 'SecurityError' || error.name === 'PermissionDeniedError') {
+                    showStatus('Camera access blocked due to security restrictions. This app requires HTTPS for camera access.');
+                    useSampleImage();
+                } else {
+                    showStatus('Error accessing camera: ' + error.message);
+                    useSampleImage();
+                }
+            }
+        };
+        
+        // Use a sample image if camera is not available
+        const useSampleImage = () => {
+            usingSampleImage = true;
+            
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.src = '/api/placeholder/640/480';
+            img.alt = 'Sample image';
+            
+            img.onload = () => {
+                video.style.display = 'none';
+                
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
+                
+                showStatus('Using sample image mode due to camera restrictions', 3000);
+                
+                // Load model if not already loaded
+                if (!model) {
+                    loadModel();
+                }
+            };
+            
+            img.onerror = () => {
+                showStatus('Error loading sample image. Please try again.');
+            };
+        };
+        
+        // Detect objects in the current frame
+        const detectObjects = async () => {
+            if (!model || isProcessing) return;
+            if (!stream && !usingSampleImage) return;
+            
+            isProcessing = true;
+            showStatus('Detecting objects...', 0);
+            
+            try {
+                // Draw the current frame to the canvas if using camera
+                if (!usingSampleImage) {
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                }
+                
+                // Source for detection depends on what we're using
+                const detectionSource = usingSampleImage ? canvas : video;
+                
+                // Get predictions from the model
+                const predictions = await model.detect(detectionSource);
+                
+                // Clear previous results
+                results.innerHTML = '';
+                
+                if (predictions.length === 0) {
+                    results.innerHTML = '<div class="loading">No objects detected. Try pointing at something else.</div>';
+                } else {
+                    // Display results
+                    predictions.forEach(prediction => {
+                        const { class: objectName, score, bbox } = prediction;
+                        const confidence = Math.round(score * 100);
+                        const translatedName = translations[currentLanguage][objectName] || objectName;
+                        
+                        // Draw bounding box
+                        ctx.strokeStyle = '#00FFFF';
+                        ctx.lineWidth = 4;
+                        ctx.strokeRect(...bbox);
+                        
+                        // Add label
+                        ctx.fillStyle = 'rgba(0, 255, 255, 0.7)';
+                        ctx.fillRect(bbox[0], bbox[1] - 30, Math.min(160, bbox[2]), 30);
+                        ctx.fillStyle = '#000000';
+                        ctx.font = 'bold 16px sans-serif';
+                        ctx.fillText(`${translatedName} (${confidence}%)`, bbox[0] + 5, bbox[1] - 10);
+                        
+                        // Add to results list
+                        const resultItem = document.createElement('div');
+                        resultItem.className = 'result-item';
+                        resultItem.innerHTML = `
+                            <span class="english">${objectName}</span>
+                            <span class="translated">${translatedName}</span>
+                        `;
+                        results.appendChild(resultItem);
+                    });
+                    
+                    // Show results panel
+                    resultContainer.classList.add('show');
+                }
+                
+                showStatus('', 0);
+            } catch (error) {
+                console.error('Detection error:', error);
+                showStatus('Error during detection: ' + error.message);
+            }
+            
+            isProcessing = false;
+        };
+        
+        // Event listeners
+        captureBtn.addEventListener('click', detectObjects);
+        
+        galleryBtn.addEventListener('click', () => {
+            showStatus('Gallery feature coming soon', 2000);
+        });
+        
+        menuBtn.addEventListener('click', () => {
+            // Toggle results panel
+            resultContainer.classList.toggle('show');
+        });
+        
+        languageSelector.addEventListener('change', (e) => {
+            currentLanguage = e.target.value;
+            showStatus(`Language changed to ${e.target.options[e.target.selectedIndex].text}`, 2000);
+        });
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            if (video.videoWidth) {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+            }
+        });
+        
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check if the browser supports getUserMedia
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                startCamera();
+            } else {
+                showStatus('Your browser does not support camera access.');
+                useSampleImage();
+            }
+        });
+    </script>
+</body>
+</html>
