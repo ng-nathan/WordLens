@@ -140,13 +140,13 @@
             border: 2px solid #444;
         }
         
-        /* Results panel */
+        /* Results panel - base style */
         #result-container {
             position: absolute;
             bottom: 0; /* Cover the bottom bar */
             left: 0;
             right: 0;
-            height: 33%; /* Take up 1/3 of the screen */
+            height: 33%; /* Default height for version 1 */
             background-color: white;
             z-index: 20; /* Above the bottom bar */
             border-top-left-radius: 20px;
@@ -154,6 +154,20 @@
             box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
             display: none; /* Hidden by default */
             flex-direction: column;
+            transition: height 0.3s ease;
+        }
+        
+        /* Panel heights for different versions */
+        .panel-version-1 #result-container {
+            height: 33%;
+        }
+        
+        .panel-version-2 #result-container {
+            height: 45%;
+        }
+        
+        .panel-version-3 #result-container {
+            height: 60%;
         }
         
         .result-header {
@@ -227,6 +241,113 @@
             margin-left: 15px;
         }
         
+        /* Additional info styles for different versions */
+        .additional-info {
+            padding: 12px 16px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .info-title {
+            color: #777;
+            font-size: 14px;
+            display: block;
+            margin-bottom: 4px;
+        }
+        
+        .info-content {
+            color: #333;
+            font-size: 16px;
+        }
+        
+        /* Example sentences */
+        .example-container {
+            margin-top: 4px;
+        }
+        
+        .english-example {
+            color: #555;
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+        
+        .french-example {
+            color: #333;
+            font-weight: 500;
+            font-size: 16px;
+        }
+        
+        /* Related words */
+        .related-words-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 8px;
+        }
+        
+        .related-word {
+            background-color: #f5f5f5;
+            border-radius: 8px;
+            padding: 8px 12px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .related-word .english {
+            font-size: 12px;
+            color: #777;
+        }
+        
+        .related-word .translated {
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        /* Version indicator */
+        .version-indicator {
+            visibility: hidden;
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            background-color: rgba(0, 0, 0, 0.6);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 100;
+        }
+        
+        /* Navigation links for different versions */
+        .version-nav {
+            visibility: hidden;
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 100;
+        }
+        
+        .version-link {
+            background-color: rgba(255, 255, 255, 0.8);
+            color: #333;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        
+        .version-link.active {
+            background-color: #3498db;
+            color: white;
+        }
+        
         .loading {
             text-align: center;
             padding: 20px;
@@ -259,6 +380,8 @@
 </head>
 <body>
     <div class="app-container">
+        <div class="version-indicator" id="versionIndicator">Version 1</div>
+        
         <div class="camera-container">
             <video id="webcam" autoplay playsinline></video>
             <canvas id="canvas"></canvas>
@@ -298,9 +421,19 @@
             </div>
             <div class="results-content" id="results"></div>
         </div>
+        
+        <div class="version-nav">
+            <a href="?panel=1" class="version-link" id="v1">1</a>
+            <a href="?panel=2" class="version-link" id="v2">2</a>
+            <a href="?panel=3" class="version-link" id="v3">3</a>
+        </div>
     </div>
 
     <script>
+        // Get URL parameters to determine panel version
+        const urlParams = new URLSearchParams(window.location.search);
+        const panelVersion = urlParams.get('panel') || '1'; // Default to version 1
+        
         // French translations for common objects
         const translations = {
             "fr": {
@@ -387,6 +520,389 @@
             }
         };
         
+                // Function to add synonyms
+        const addSynonyms = (word) => {
+            // Sample synonyms for common objects
+            const synonyms = {
+                "person": ["human", "individual"],
+                "car": ["automobile", "vehicle"],
+                "chair": ["seat"],
+                "apple": ["fruit"],
+                "book": ["tome", "volume"],
+                "bottle": ["container", "flask"],
+                "cup": ["mug", "glass"],
+                "dog": ["canine", "pet"],
+                "cat": ["feline", "pet"],
+                "laptop": ["computer", "notebook"],
+                "phone": ["mobile", "cellphone"],
+                "fork": ["utensil"],
+                "knife": ["utensil", "blade"],
+                "spoon": ["utensil"],
+                "bird": ["fowl", "avian"],
+                "bicycle": ["bike", "cycle"],
+                "motorcycle": ["motorbike", "bike"],
+                "truck": ["lorry", "pickup"],
+                "boat": ["vessel", "ship"],
+                "train": ["locomotive", "railcar"],
+                "airplane": ["aircraft", "plane"],
+                "bus": ["coach", "omnibus"],
+                "traffic light": ["signal", "stoplight"],
+                "fire hydrant": ["hydrant", "water source"],
+                "stop sign": ["traffic sign"],
+                "bench": ["seat", "stool"],
+                "elephant": ["pachyderm"],
+                "bear": ["grizzly", "bruin"],
+                "zebra": ["equid"],
+                "giraffe": ["camelopard"],
+                "backpack": ["rucksack", "knapsack"],
+                "umbrella": ["parasol", "sunshade"],
+                "handbag": ["purse", "bag"],
+                "tie": ["necktie", "cravat"],
+                "suitcase": ["luggage", "baggage"],
+                "frisbee": ["disc", "flying disc"],
+                "skis": ["runners"],
+                "snowboard": ["board"],
+                "sports ball": ["ball", "game ball"],
+                "kite": ["wind toy"],
+                "baseball bat": ["bat", "club"],
+                "baseball glove": ["glove", "mitt"],
+                "skateboard": ["board"],
+                "surfboard": ["board"],
+                "tennis racket": ["racket", "racquet"],
+                "wine glass": ["goblet", "stemware"],
+                "fork": ["cutlery"],
+                "knife": ["blade", "cutlery"],
+                "spoon": ["cutlery"],
+                "bowl": ["dish", "basin"],
+                "banana": ["fruit"],
+                "sandwich": ["snack", "lunch item"],
+                "orange": ["citrus", "fruit"],
+                "broccoli": ["vegetable", "greens"],
+                "carrot": ["vegetable", "root"],
+                "hot dog": ["frankfurter", "sausage"],
+                "pizza": ["pie", "flatbread"],
+                "donut": ["doughnut", "pastry"],
+                "cake": ["dessert", "pastry"],
+                "couch": ["sofa", "settee"],
+                "potted plant": ["houseplant", "plant"],
+                "bed": ["mattress", "cot"],
+                "dining table": ["table"],
+                "toilet": ["lavatory", "bathroom fixture"],
+                "tv": ["television", "monitor"],
+                "remote": ["controller", "clicker"],
+                "cell phone": ["smartphone", "mobile phone"],
+                "microwave": ["microwave oven", "appliance"],
+                "oven": ["stove", "range"],
+                "toaster": ["appliance"],
+                "sink": ["basin", "washbasin"],
+                "refrigerator": ["fridge", "cooler"],
+                "clock": ["timepiece", "timekeeper"],
+                "vase": ["vessel", "container"],
+                "scissors": ["shears", "cutting tool"],
+                "teddy bear": ["stuffed toy", "plush toy"],
+                "hair dryer": ["blow dryer", "dryer"],
+                "toothbrush": ["dental tool"]
+            };
+            
+            if (synonyms[word] && synonyms[word].length > 0) {
+                const synItem = document.createElement('div');
+                synItem.className = 'additional-info';
+                synItem.innerHTML = `
+                    <span class="info-title">Synonyms:</span>
+                    <span class="info-content">${synonyms[word].join(', ')}</span>
+                `;
+                results.appendChild(synItem);
+            }
+        };
+        
+        // Function to add an example sentence
+        const addExampleSentence = (word, translation) => {
+            // Sample example sentences
+            const examples = {
+                "person": ["The person walked into the room.", "La personne est entrée dans la pièce."],
+                "car": ["I drive a blue car.", "Je conduis une voiture bleue."],
+                "chair": ["Please sit on this chair.", "Veuillez vous asseoir sur cette chaise."],
+                "apple": ["I eat an apple every day.", "Je mange une pomme tous les jours."],
+                "book": ["She wrote a book about history.", "Elle a écrit un livre sur l'histoire."],
+                "bottle": ["The bottle is empty.", "La bouteille est vide."],
+                "cup": ["The coffee cup is hot.", "La tasse de café est chaude."],
+                "dog": ["My dog likes to play outside.", "Mon chien aime jouer dehors."],
+                "cat": ["The cat is sleeping on the sofa.", "Le chat dort sur le canapé."],
+                "laptop": ["I work on my laptop every day.", "Je travaille sur mon ordinateur portable tous les jours."],
+                "phone": ["I need to charge my phone.", "Je dois charger mon téléphone."],
+                "knife": ["Be careful with that knife.", "Sois prudent avec ce couteau."],
+                "bird": ["The bird is singing in the tree.", "L'oiseau chante dans l'arbre."],
+                "bicycle": ["I ride my bicycle to work.", "Je vais au travail à vélo."],
+                "motorcycle": ["The motorcycle is very fast.", "La moto est très rapide."],
+                "truck": ["The truck is carrying heavy goods.", "Le camion transporte des marchandises lourdes."],
+                "boat": ["We went fishing on a boat.", "Nous sommes allés pêcher sur un bateau."],
+                "train": ["The train arrives at 3 o'clock.", "Le train arrive à 3 heures."],
+                "airplane": ["The airplane is flying above the clouds.", "L'avion vole au-dessus des nuages."],
+                "bus": ["I take the bus to school.", "Je prends le bus pour aller à l'école."],
+                "traffic light": ["Stop at the red traffic light.", "Arrêtez-vous au feu rouge."],
+                "fire hydrant": ["The fire hydrant is red.", "La bouche d'incendie est rouge."],
+                "stop sign": ["You must stop at the stop sign.", "Vous devez vous arrêter au panneau stop."],
+                "bench": ["Let's sit on that bench.", "Asseyons-nous sur ce banc."],
+                "elephant": ["The elephant has a long trunk.", "L'éléphant a une longue trompe."],
+                "bear": ["The bear is eating honey.", "L'ours mange du miel."],
+                "zebra": ["The zebra has black and white stripes.", "Le zèbre a des rayures noires et blanches."],
+                "giraffe": ["The giraffe has a long neck.", "La girafe a un long cou."],
+                "backpack": ["My books are in my backpack.", "Mes livres sont dans mon sac à dos."],
+                "umbrella": ["Take an umbrella, it's raining.", "Prends un parapluie, il pleut."],
+                "handbag": ["She put her keys in her handbag.", "Elle a mis ses clés dans son sac à main."],
+                "tie": ["He wears a tie to work.", "Il porte une cravate au travail."],
+                "suitcase": ["Pack your clothes in the suitcase.", "Range tes vêtements dans la valise."],
+                "frisbee": ["We played frisbee in the park.", "Nous avons joué au frisbee dans le parc."],
+                "skis": ["I love skiing with my new skis.", "J'adore skier avec mes nouveaux skis."],
+                "snowboard": ["He does tricks on his snowboard.", "Il fait des figures sur son snowboard."],
+                "sports ball": ["The children are playing with a sports ball.", "Les enfants jouent avec un ballon de sport."],
+                "kite": ["The kite is flying high in the sky.", "Le cerf-volant vole haut dans le ciel."],
+                "baseball bat": ["He hit the ball with the baseball bat.", "Il a frappé la balle avec la batte de baseball."],
+                "baseball glove": ["Catch the ball with your baseball glove.", "Attrape la balle avec ton gant de baseball."],
+                "skateboard": ["He can do tricks on a skateboard.", "Il peut faire des figures sur un skateboard."],
+                "surfboard": ["She rides the waves on her surfboard.", "Elle surfe les vagues sur sa planche de surf."],
+                "tennis racket": ["She plays tennis with her new tennis racket.", "Elle joue au tennis avec sa nouvelle raquette de tennis."],
+                "wine glass": ["Pour the wine into the wine glass.", "Versez le vin dans le verre à vin."],
+                "fork": ["Eat your pasta with a fork.", "Mange tes pâtes avec une fourchette."],
+                "spoon": ["Stir your tea with a spoon.", "Remue ton thé avec une cuillère."],
+                "bowl": ["The soup is in the bowl.", "La soupe est dans le bol."],
+                "banana": ["Monkeys like to eat bananas.", "Les singes aiment manger des bananes."],
+                "sandwich": ["I made a cheese sandwich for lunch.", "J'ai fait un sandwich au fromage pour le déjeuner."],
+                "orange": ["The orange is sweet and juicy.", "L'orange est sucrée et juteuse."],
+                "broccoli": ["Children often don't like broccoli.", "Les enfants n'aiment souvent pas le brocoli."],
+                "carrot": ["Rabbits love to eat carrots.", "Les lapins adorent manger des carottes."],
+                "hot dog": ["We ate hot dogs at the baseball game.", "Nous avons mangé des hot-dogs au match de baseball."],
+                "pizza": ["Let's order a pizza for dinner.", "Commandons une pizza pour le dîner."],
+                "donut": ["I had a donut with my coffee.", "J'ai pris un beignet avec mon café."],
+                "cake": ["We ate cake on his birthday.", "Nous avons mangé du gâteau pour son anniversaire."],
+                "couch": ["The cat is sleeping on the couch.", "Le chat dort sur le canapé."],
+                "potted plant": ["The potted plant needs water.", "La plante en pot a besoin d'eau."],
+                "bed": ["I sleep in my bed every night.", "Je dors dans mon lit chaque nuit."],
+                "dining table": ["We eat dinner at the dining table.", "Nous dînons à la table à manger."],
+                "toilet": ["The toilet is in the bathroom.", "Les toilettes sont dans la salle de bain."],
+                "tv": ["We watched a movie on TV.", "Nous avons regardé un film à la télévision."],
+                "remote": ["Where is the TV remote?", "Où est la télécommande de la télé?"],
+                "cell phone": ["I always carry my cell phone.", "J'ai toujours mon téléphone portable sur moi."],
+                "microwave": ["Heat the food in the microwave.", "Chauffez la nourriture dans le micro-ondes."],
+                "oven": ["Bake the cake in the oven.", "Faites cuire le gâteau dans le four."],
+                "toaster": ["Make toast in the toaster.", "Fais griller le pain dans le grille-pain."],
+                "sink": ["Wash your hands in the sink.", "Lave-toi les mains dans l'évier."],
+                "refrigerator": ["Keep the milk in the refrigerator.", "Garde le lait dans le réfrigérateur."],
+                "clock": ["The clock shows 3 o'clock.", "L'horloge indique 3 heures."],
+                "vase": ["Put the flowers in the vase.", "Mets les fleurs dans le vase."],
+                "scissors": ["Cut the paper with scissors.", "Coupe le papier avec des ciseaux."],
+                "teddy bear": ["The child sleeps with a teddy bear.", "L'enfant dort avec un ours en peluche."],
+                "hair dryer": ["Dry your hair with the hair dryer.", "Sèche tes cheveux avec le sèche-cheveux."],
+                "toothbrush": ["Brush your teeth with a toothbrush.", "Brosse-toi les dents avec une brosse à dents."]
+            };
+            
+            if (examples[word]) {
+                const exampleItem = document.createElement('div');
+                exampleItem.className = 'additional-info';
+                exampleItem.innerHTML = `
+                    <span class="info-title">Example:</span>
+                    <div class="example-container">
+                        <p class="english-example">${examples[word][0]}</p>
+                        <p class="french-example">${examples[word][1]}</p>
+                    </div>
+                `;
+                results.appendChild(exampleItem);
+            }
+        };
+        
+        // Function to add a second example sentence
+        const addAdditionalExampleSentence = (word, translation) => {
+            // Sample additional example sentences
+            const examples = {
+                "person": ["That person is my friend.", "Cette personne est mon ami."],
+                "car": ["The car is parked outside.", "La voiture est garée dehors."],
+                "chair": ["The chair is broken.", "La chaise est cassée."],
+                "apple": ["This apple is sweet.", "Cette pomme est sucrée."],
+                "book": ["I read a book last night.", "J'ai lu un livre hier soir."],
+                "bottle": ["Please pass me that bottle.", "Passe-moi cette bouteille, s'il te plaît."],
+                "cup": ["I need a cup of water.", "J'ai besoin d'une tasse d'eau."],
+                "dog": ["The dog is barking at the mailman.", "Le chien aboie après le facteur."],
+                "cat": ["My cat likes to play with yarn.", "Mon chat aime jouer avec du fil."],
+                "laptop": ["My laptop battery is low.", "La batterie de mon ordinateur portable est faible."],
+                "phone": ["I lost my phone yesterday.", "J'ai perdu mon téléphone hier."],
+                "knife": ["The knife is very sharp.", "Le couteau est très tranchant."],
+                "bird": ["The bird built a nest in our garden.", "L'oiseau a construit un nid dans notre jardin."],
+                "bicycle": ["My bicycle has a flat tire.", "Mon vélo a un pneu crevé."],
+                "motorcycle": ["He bought a new motorcycle.", "Il a acheté une nouvelle moto."],
+                "truck": ["The truck is delivering packages.", "Le camion livre des colis."],
+                "boat": ["The boat is sailing on the lake.", "Le bateau navigue sur le lac."],
+                "train": ["We missed the last train.", "Nous avons raté le dernier train."],
+                "airplane": ["Our airplane was delayed.", "Notre avion a été retardé."],
+                "bus": ["The bus is running late today.", "Le bus est en retard aujourd'hui."],
+                "traffic light": ["The traffic light turned green.", "Le feu de circulation est passé au vert."],
+                "fire hydrant": ["The firefighters connected the hose to the fire hydrant.", "Les pompiers ont connecté le tuyau à la bouche d'incendie."],
+                "stop sign": ["There's a stop sign at the corner.", "Il y a un panneau stop au coin de la rue."],
+                "bench": ["The old man sat on the bench.", "Le vieil homme s'est assis sur le banc."],
+                "elephant": ["The elephant sprayed water with its trunk.", "L'éléphant a pulvérisé de l'eau avec sa trompe."],
+                "bear": ["We saw a bear in the forest.", "Nous avons vu un ours dans la forêt."],
+                "zebra": ["The zebra is running across the savanna.", "Le zèbre court à travers la savane."],
+                "giraffe": ["The giraffe is eating leaves from tall trees.", "La girafe mange des feuilles des grands arbres."],
+                "backpack": ["My backpack is too heavy.", "Mon sac à dos est trop lourd."],
+                "umbrella": ["I forgot my umbrella and got wet.", "J'ai oublié mon parapluie et je me suis mouillé."],
+                "handbag": ["Her handbag matches her shoes.", "Son sac à main est assorti à ses chaussures."],
+                "tie": ["His tie is blue with white stripes.", "Sa cravate est bleue avec des rayures blanches."],
+                "suitcase": ["My suitcase is missing.", "Ma valise a disparu."],
+                "frisbee": ["The dog caught the frisbee.", "Le chien a attrapé le frisbee."],
+                "skis": ["He waxed his skis before the race.", "Il a ciré ses skis avant la course."],
+                "snowboard": ["She fell while learning to snowboard.", "Elle est tombée en apprenant à faire du snowboard."],
+                "sports ball": ["The sports ball bounced over the fence.", "Le ballon de sport a rebondi par-dessus la clôture."],
+                "kite": ["The wind carried away our kite.", "Le vent a emporté notre cerf-volant."],
+                "baseball bat": ["The baseball bat is made of wood.", "La batte de baseball est faite de bois."],
+                "baseball glove": ["He caught the ball with his baseball glove.", "Il a attrapé la balle avec son gant de baseball."],
+                "skateboard": ["The skateboard has colorful wheels.", "Le skateboard a des roues colorées."],
+                "surfboard": ["The surfboard is waxed and ready.", "La planche de surf est cirée et prête."],
+                "tennis racket": ["My tennis racket has a broken string.", "Ma raquette de tennis a une corde cassée."],
+                "wine glass": ["She accidentally broke the wine glass.", "Elle a accidentellement cassé le verre à vin."],
+                "fork": ["Pass me that fork, please.", "Passe-moi cette fourchette, s'il te plaît."],
+                "spoon": ["I need a spoon for my soup.", "J'ai besoin d'une cuillère pour ma soupe."],
+                "bowl": ["The bowl is full of cereal.", "Le bol est plein de céréales."],
+                "banana": ["The banana is not ripe yet.", "La banane n'est pas encore mûre."],
+                "sandwich": ["I packed a sandwich for lunch.", "J'ai préparé un sandwich pour le déjeuner."],
+                "orange": ["Peel the orange before eating it.", "Épluche l'orange avant de la manger."],
+                "broccoli": ["Steam the broccoli for five minutes.", "Fais cuire le brocoli à la vapeur pendant cinq minutes."],
+                "carrot": ["The carrot is crunchy and sweet.", "La carotte est croquante et sucrée."],
+                "hot dog": ["Add mustard to your hot dog.", "Ajoute de la moutarde à ton hot-dog."],
+                "pizza": ["The pizza has extra cheese.", "La pizza a du fromage supplémentaire."],
+                "donut": ["The donut is covered with chocolate.", "Le beignet est recouvert de chocolat."],
+                "cake": ["The cake has three layers.", "Le gâteau a trois couches."],
+                "couch": ["We need a new couch for the living room.", "Nous avons besoin d'un nouveau canapé pour le salon."],
+                "potted plant": ["Water the potted plant twice a week.", "Arrosez la plante en pot deux fois par semaine."],
+                "bed": ["Make your bed every morning.", "Fais ton lit tous les matins."],
+                "dining table": ["Set the dining table for dinner.", "Mets la table à manger pour le dîner."],
+                "toilet": ["The toilet needs to be cleaned.", "Les toilettes doivent être nettoyées."],
+                "tv": ["The TV remote is missing.", "La télécommande de la télé a disparu."],
+                "remote": ["The remote needs new batteries.", "La télécommande a besoin de nouvelles piles."],
+                "cell phone": ["My cell phone is ringing.", "Mon téléphone portable sonne."],
+                "microwave": ["Clean the microwave after use.", "Nettoyez le micro-ondes après utilisation."],
+                "oven": ["Preheat the oven to 350 degrees.", "Préchauffez le four à 350 degrés."],
+                "toaster": ["The toaster is broken.", "Le grille-pain est cassé."],
+                "sink": ["The sink is full of dirty dishes.", "L'évier est plein de vaisselle sale."],
+                "refrigerator": ["There's nothing to eat in the refrigerator.", "Il n'y a rien à manger dans le réfrigérateur."],
+                "clock": ["The clock is five minutes fast.", "L'horloge avance de cinq minutes."],
+                "vase": ["The vase is hand-painted.", "Le vase est peint à la main."],
+                "scissors": ["The scissors are very sharp.", "Les ciseaux sont très tranchants."],
+                "teddy bear": ["The teddy bear has one eye missing.", "L'ours en peluche a un œil manquant."],
+                "hair dryer": ["The hair dryer is too noisy.", "Le sèche-cheveux est trop bruyant."],
+                "toothbrush": ["Replace your toothbrush every three months.", "Remplacez votre brosse à dents tous les trois mois."]
+            };
+            
+            if (examples[word]) {
+                const exampleItem = document.createElement('div');
+                exampleItem.className = 'additional-info';
+                exampleItem.innerHTML = `
+                    <span class="info-title">Another example:</span>
+                    <div class="example-container">
+                        <p class="english-example">${examples[word][0]}</p>
+                        <p class="french-example">${examples[word][1]}</p>
+                    </div>
+                `;
+                results.appendChild(exampleItem);
+            }
+        };
+        
+        // Function to add related words
+        const addRelatedWords = (word) => {
+            // Sample related words
+            const relatedWords = {
+                "person": [["man", "homme"], ["woman", "femme"], ["child", "enfant"]],
+                "car": [["truck", "camion"], ["motorcycle", "moto"], ["bus", "bus"]],
+                "chair": [["table", "table"], ["sofa", "canapé"], ["desk", "bureau"]],
+                "apple": [["orange", "orange"], ["banana", "banane"], ["pear", "poire"]],
+                "book": [["magazine", "magazine"], ["newspaper", "journal"], ["journal", "journal intime"]],
+                "bottle": [["glass", "verre"], ["cup", "tasse"], ["container", "récipient"]],
+                "cup": [["mug", "tasse"], ["glass", "verre"], ["teacup", "tasse à thé"]],
+                "dog": [["cat", "chat"], ["pet", "animal de compagnie"], ["puppy", "chiot"]],
+                "cat": [["dog", "chien"], ["kitten", "chaton"], ["pet", "animal de compagnie"]],
+                "laptop": [["computer", "ordinateur"], ["tablet", "tablette"], ["keyboard", "clavier"]],
+                "phone": [["smartphone", "smartphone"], ["telephone", "téléphone"], ["device", "appareil"]],
+                "knife": [["fork", "fourchette"], ["spoon", "cuillère"], ["utensil", "ustensile"]],
+                "bird": [["eagle", "aigle"], ["sparrow", "moineau"], ["parrot", "perroquet"]],
+                "bicycle": [["motorcycle", "moto"], ["scooter", "trottinette"], ["vehicle", "véhicule"]],
+                "motorcycle": [["car", "voiture"], ["bicycle", "vélo"], ["scooter", "scooter"]],
+                "truck": [["car", "voiture"], ["van", "camionnette"], ["vehicle", "véhicule"]],
+                "boat": [["ship", "navire"], ["yacht", "yacht"], ["canoe", "canoë"]],
+                "train": [["subway", "métro"], ["tram", "tramway"], ["bus", "bus"]],
+                "airplane": [["helicopter", "hélicoptère"], ["jet", "jet"], ["glider", "planeur"]],
+                "bus": [["train", "train"], ["taxi", "taxi"], ["car", "voiture"]],
+                "traffic light": [["stop sign", "panneau stop"], ["crosswalk", "passage piéton"], ["sign", "panneau"]],
+                "fire hydrant": [["water", "eau"], ["hose", "tuyau"], ["fire truck", "camion de pompiers"]],
+                "stop sign": [["yield sign", "panneau cédez le passage"], ["traffic light", "feu de circulation"], ["road sign", "panneau routier"]],
+                "bench": [["chair", "chaise"], ["seat", "siège"], ["park", "parc"]],
+                "elephant": [["giraffe", "girafe"], ["zebra", "zèbre"], ["lion", "lion"]],
+                "bear": [["wolf", "loup"], ["fox", "renard"], ["deer", "cerf"]],
+                "zebra": [["horse", "cheval"], ["giraffe", "girafe"], ["elephant", "éléphant"]],
+                "giraffe": [["zebra", "zèbre"], ["elephant", "éléphant"], ["antelope", "antilope"]],
+                "backpack": [["bag", "sac"], ["purse", "sac à main"], ["luggage", "bagage"]],
+                "umbrella": [["raincoat", "imperméable"], ["hat", "chapeau"], ["rain", "pluie"]],
+                "handbag": [["purse", "porte-monnaie"], ["wallet", "portefeuille"], ["backpack", "sac à dos"]],
+                "tie": [["shirt", "chemise"], ["suit", "costume"], ["bow tie", "nœud papillon"]],
+                "suitcase": [["bag", "sac"], ["luggage", "bagage"], ["backpack", "sac à dos"]],
+                "frisbee": [["ball", "balle"], ["disc", "disque"], ["toy", "jouet"]],
+                "skis": [["snowboard", "snowboard"], ["poles", "bâtons"], ["snow", "neige"]],
+                "snowboard": [["skis", "skis"], ["snow", "neige"], ["winter", "hiver"]],
+                "sports ball": [["basketball", "basket-ball"], ["soccer ball", "ballon de football"], ["tennis ball", "balle de tennis"]],
+                "kite": [["balloon", "ballon"], ["flag", "drapeau"], ["wind", "vent"]],
+                "baseball bat": [["baseball", "baseball"], ["ball", "balle"], ["glove", "gant"]],
+                "baseball glove": [["baseball bat", "batte de baseball"], ["ball", "balle"], ["mitt", "mitaine"]],
+                "skateboard": [["scooter", "trottinette"], ["bicycle", "vélo"], ["rollerblades", "rollers"]],
+                "surfboard": [["wetsuit", "combinaison"], ["wave", "vague"], ["beach", "plage"]],
+                "tennis racket": [["tennis ball", "balle de tennis"], ["net", "filet"], ["court", "court"]],
+                "wine glass": [["cup", "tasse"], ["bottle", "bouteille"], ["glass", "verre"]],
+                "fork": [["knife", "couteau"], ["spoon", "cuillère"], ["plate", "assiette"]],
+                "spoon": [["fork", "fourchette"], ["knife", "couteau"], ["bowl", "bol"]],
+                "bowl": [["plate", "assiette"], ["cup", "tasse"], ["dish", "plat"]],
+                "banana": [["apple", "pomme"], ["orange", "orange"], ["fruit", "fruit"]],
+                "sandwich": [["bread", "pain"], ["hamburger", "hamburger"], ["meal", "repas"]],
+                "orange": [["apple", "pomme"], ["banana", "banane"], ["lemon", "citron"]],
+                "broccoli": [["carrot", "carotte"], ["vegetable", "légume"], ["cauliflower", "chou-fleur"]],
+                "carrot": [["broccoli", "brocoli"], ["vegetable", "légume"], ["potato", "pomme de terre"]],
+                "hot dog": [["hamburger", "hamburger"], ["sandwich", "sandwich"], ["sausage", "saucisse"]],
+                "pizza": [["pasta", "pâtes"], ["bread", "pain"], ["cheese", "fromage"]],
+                "donut": [["cake", "gâteau"], ["pastry", "pâtisserie"], ["cookie", "biscuit"]],
+                "cake": [["pie", "tarte"], ["pastry", "pâtisserie"], ["dessert", "dessert"]],
+                "couch": [["chair", "chaise"], ["sofa", "canapé"], ["furniture", "meuble"]],
+                "potted plant": [["flower", "fleur"], ["tree", "arbre"], ["garden", "jardin"]],
+                "bed": [["pillow", "oreiller"], ["blanket", "couverture"], ["mattress", "matelas"]],
+                "dining table": [["chair", "chaise"], ["desk", "bureau"], ["furniture", "meuble"]],
+                "toilet": [["sink", "évier"], ["bathtub", "baignoire"], ["bathroom", "salle de bain"]],
+                "tv": [["monitor", "moniteur"], ["screen", "écran"], ["computer", "ordinateur"]],
+                "remote": [["controller", "contrôleur"], ["tv", "télévision"], ["device", "appareil"]],
+                "cell phone": [["smartphone", "smartphone"], ["device", "appareil"], ["computer", "ordinateur"]],
+                "microwave": [["oven", "four"], ["appliance", "appareil"], ["kitchen", "cuisine"]],
+                "oven": [["stove", "cuisinière"], ["microwave", "micro-ondes"], ["appliance", "appareil"]],
+                "toaster": [["appliance", "appareil"], ["bread", "pain"], ["kitchen", "cuisine"]],
+                "sink": [["faucet", "robinet"], ["basin", "bassin"], ["water", "eau"]],
+                "refrigerator": [["freezer", "congélateur"], ["appliance", "appareil"], ["kitchen", "cuisine"]],
+                "clock": [["watch", "montre"], ["time", "temps"], ["alarm", "alarme"]],
+                "vase": [["flower", "fleur"], ["pot", "pot"], ["decoration", "décoration"]],
+                "scissors": [["knife", "couteau"], ["tool", "outil"], ["blade", "lame"]],
+                "teddy bear": [["toy", "jouet"], ["doll", "poupée"], ["stuffed animal", "animal en peluche"]],
+                "hair dryer": [["brush", "brosse"], ["appliance", "appareil"], ["bathroom", "salle de bain"]],
+                "toothbrush": [["toothpaste", "dentifrice"], ["floss", "fil dentaire"], ["bathroom", "salle de bain"]]
+            };
+            
+            if (relatedWords[word]) {
+                const relatedItem = document.createElement('div');
+                relatedItem.className = 'additional-info';
+                relatedItem.innerHTML = `
+                    <span class="info-title">Related words:</span>
+                    <div class="related-words-container">
+                        ${relatedWords[word].map(pair => 
+                            `<div class="related-word">
+                                <span class="english">${pair[0]}</span>
+                                <span class="translated">${pair[1]}</span>
+                            </div>`
+                        ).join('')}
+                    </div>
+                `;
+                results.appendChild(relatedItem);
+            }
+        };
         const video = document.getElementById('webcam');
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
@@ -398,6 +914,7 @@
         const closeResultsBtn = document.getElementById('close-results-btn');
         const languageSelector = document.getElementById('language-selector');
         const statusMessage = document.getElementById('status-message');
+        const versionIndicator = document.getElementById('versionIndicator');
         
         let model;
         let stream;
@@ -577,7 +1094,7 @@
             // Clear previous results
             results.innerHTML = '';
             
-            // Create a result item for the clicked object with pronunciation button
+            // Create a base result item with the word and pronunciation button
             const resultItem = document.createElement('div');
             resultItem.className = 'result-item';
             resultItem.innerHTML = `
@@ -602,6 +1119,32 @@
             });
             
             results.appendChild(resultItem);
+            
+            // Add version-specific content
+            switch(panelVersion) {
+                case '1':
+                    // Version 1: Add synonyms
+                    addSynonyms(objectName);
+                    break;
+                    
+                case '2':
+                    // Version 2: Add synonyms and example sentence
+                    addSynonyms(objectName);
+                    addExampleSentence(objectName, translatedName);
+                    break;
+                    
+                case '3':
+                    // Version 3: Add synonyms, example sentences, and related words
+                    addSynonyms(objectName);
+                    addExampleSentence(objectName, translatedName);
+                    addAdditionalExampleSentence(objectName, translatedName);
+                    addRelatedWords(objectName);
+                    break;
+                    
+                default:
+                    // Default version
+                    break;
+            }
             
             // Show results panel
             resultContainer.style.display = 'flex';
@@ -689,6 +1232,32 @@
                 });
                 
                 results.appendChild(resultItem);
+                
+                // Add version-specific content based on panel version
+                switch(panelVersion) {
+                    case '1':
+                        // Version 1: Add synonyms
+                        addSynonyms(objectName);
+                        break;
+                        
+                    case '2':
+                        // Version 2: Add synonyms and example sentence
+                        addSynonyms(objectName);
+                        addExampleSentence(objectName, translatedName);
+                        break;
+                        
+                    case '3':
+                        // Version 3: Add synonyms, example sentences, and related words
+                        addSynonyms(objectName);
+                        addExampleSentence(objectName, translatedName);
+                        addAdditionalExampleSentence(objectName, translatedName);
+                        addRelatedWords(objectName);
+                        break;
+                        
+                    default:
+                        // Default version
+                        break;
+                }
             });
             
             // Show results panel
@@ -726,9 +1295,14 @@
             showStatus('Gallery feature coming soon', 2000);
         });
         
-        // Menu button - show coming soon message
+        // Menu button - show all detections or coming soon message depending on version
         menuBtn.addEventListener('click', () => {
-            showStatus('Menu feature coming soon', 2000);
+            // For demo purposes, let's make the menu button show all detections in version 3
+            if (panelVersion === '3') {
+                showAllDetections();
+            } else {
+                showStatus('Menu feature coming soon', 2000);
+            }
         });
         
         // Close results button
@@ -763,6 +1337,18 @@
         
         // Initialize app
         document.addEventListener('DOMContentLoaded', () => {
+            // Update version indicator
+            versionIndicator.textContent = `Version ${panelVersion}`;
+            
+            // Mark the active version link
+            document.querySelectorAll('.version-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            document.getElementById(`v${panelVersion}`).classList.add('active');
+            
+            // Add version-specific class to body for panel height
+            document.body.classList.add(`panel-version-${panelVersion}`);
+            
             // Check if the browser supports getUserMedia
             if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
                 startCamera();
