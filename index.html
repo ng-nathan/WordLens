@@ -376,6 +376,46 @@
             text-align: center;
             display: none;
         }
+        /* Language selector wrapper */
+    .language-selector-wrapper {
+        position: absolute;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        align-items: center;
+        background-color: rgba(255, 255, 255, 0.8);
+        border: 1px solid rgba(221, 221, 221, 0.6);
+        border-radius: 20px;
+        padding: 4px 12px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        z-index: 10;
+    }
+    
+    /* Selector dropdown style */
+    .language-selector-item {
+        padding: 4px 8px;
+        background-color: transparent;
+        border: none;
+        color: #333;
+        font-size: 16px;
+        outline: none;
+        min-width: 90px;
+    }
+    
+    .language-selector-item option {
+        background-color: white;
+        color: #333;
+    }
+    
+    /* Direction arrow between selectors */
+    .direction-arrow {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #666;
+        margin: 0 4px;
+    }
     </style>
 </head>
 <body>
@@ -386,10 +426,21 @@
             <video id="webcam" autoplay playsinline></video>
             <canvas id="canvas"></canvas>
             
-            <select class="language-selector" id="language-selector">
-                <option value="fr">French</option>
-                <!-- Other languages will be added later -->
-            </select>
+            <div class="language-selector-wrapper">
+                <select class="language-selector-item" id="language-selector">
+                    <option value="fr">French</option>
+                    <!-- Other languages will be added later -->
+                </select>
+                <div class="direction-arrow">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 12h14"></path>
+                        <path d="m12 5 7 7-7 7"></path>
+                    </svg>
+                </div>
+                <select class="language-selector-item" id="target-language-selector">
+                    <option value="en">English</option>
+                </select>
+            </div>
             
             <div id="status-message"></div>
         </div>
@@ -520,95 +571,95 @@
             }
         };
         
-                // Function to add synonyms
+        // Function to add synonyms
         const addSynonyms = (word) => {
-            // Sample synonyms for common objects
+            // Sample synonyms for common objects (in French)
             const synonyms = {
-                "person": ["human", "individual"],
-                "car": ["automobile", "vehicle"],
-                "chair": ["seat"],
-                "apple": ["fruit"],
+                "person": ["personne", "individu"],
+                "car": ["automobile", "véhicule"],
+                "chair": ["siège"],
+                "apple": ["fruit", "pomme"],
                 "book": ["tome", "volume"],
-                "bottle": ["container", "flask"],
-                "cup": ["mug", "glass"],
-                "dog": ["canine", "pet"],
-                "cat": ["feline", "pet"],
-                "laptop": ["computer", "notebook"],
-                "phone": ["mobile", "cellphone"],
-                "fork": ["utensil"],
-                "knife": ["utensil", "blade"],
-                "spoon": ["utensil"],
-                "bird": ["fowl", "avian"],
-                "bicycle": ["bike", "cycle"],
-                "motorcycle": ["motorbike", "bike"],
-                "truck": ["lorry", "pickup"],
-                "boat": ["vessel", "ship"],
-                "train": ["locomotive", "railcar"],
-                "airplane": ["aircraft", "plane"],
-                "bus": ["coach", "omnibus"],
-                "traffic light": ["signal", "stoplight"],
-                "fire hydrant": ["hydrant", "water source"],
-                "stop sign": ["traffic sign"],
-                "bench": ["seat", "stool"],
-                "elephant": ["pachyderm"],
-                "bear": ["grizzly", "bruin"],
-                "zebra": ["equid"],
-                "giraffe": ["camelopard"],
-                "backpack": ["rucksack", "knapsack"],
-                "umbrella": ["parasol", "sunshade"],
-                "handbag": ["purse", "bag"],
-                "tie": ["necktie", "cravat"],
-                "suitcase": ["luggage", "baggage"],
-                "frisbee": ["disc", "flying disc"],
-                "skis": ["runners"],
-                "snowboard": ["board"],
-                "sports ball": ["ball", "game ball"],
-                "kite": ["wind toy"],
-                "baseball bat": ["bat", "club"],
-                "baseball glove": ["glove", "mitt"],
-                "skateboard": ["board"],
-                "surfboard": ["board"],
-                "tennis racket": ["racket", "racquet"],
-                "wine glass": ["goblet", "stemware"],
-                "fork": ["cutlery"],
-                "knife": ["blade", "cutlery"],
-                "spoon": ["cutlery"],
-                "bowl": ["dish", "basin"],
-                "banana": ["fruit"],
-                "sandwich": ["snack", "lunch item"],
-                "orange": ["citrus", "fruit"],
-                "broccoli": ["vegetable", "greens"],
-                "carrot": ["vegetable", "root"],
-                "hot dog": ["frankfurter", "sausage"],
-                "pizza": ["pie", "flatbread"],
-                "donut": ["doughnut", "pastry"],
-                "cake": ["dessert", "pastry"],
-                "couch": ["sofa", "settee"],
-                "potted plant": ["houseplant", "plant"],
-                "bed": ["mattress", "cot"],
-                "dining table": ["table"],
-                "toilet": ["lavatory", "bathroom fixture"],
-                "tv": ["television", "monitor"],
-                "remote": ["controller", "clicker"],
-                "cell phone": ["smartphone", "mobile phone"],
-                "microwave": ["microwave oven", "appliance"],
-                "oven": ["stove", "range"],
-                "toaster": ["appliance"],
-                "sink": ["basin", "washbasin"],
-                "refrigerator": ["fridge", "cooler"],
-                "clock": ["timepiece", "timekeeper"],
-                "vase": ["vessel", "container"],
-                "scissors": ["shears", "cutting tool"],
-                "teddy bear": ["stuffed toy", "plush toy"],
-                "hair dryer": ["blow dryer", "dryer"],
-                "toothbrush": ["dental tool"]
+                "bottle": ["flacon", "récipient"],
+                "cup": ["tasse", "verre"],
+                "dog": ["canin", "animal de compagnie"],
+                "cat": ["félin", "animal de compagnie"],
+                "laptop": ["ordinateur", "portable"],
+                "phone": ["mobile", "portable"],
+                "fork": ["ustensile"],
+                "knife": ["lame", "couteau de cuisine"],
+                "spoon": ["ustensile"],
+                "bird": ["volatile", "oiseau de compagnie"],
+                "bicycle": ["vélo", "bicyclette"],
+                "motorcycle": ["moto", "deux-roues"],
+                "truck": ["poids lourd", "camionnette"],
+                "boat": ["embarcation", "navire"],
+                "train": ["locomotive", "wagon"],
+                "airplane": ["avion de ligne", "appareil"],
+                "bus": ["autocar", "autobus"],
+                "traffic light": ["signalisation", "feu tricolore"],
+                "fire hydrant": ["borne", "borne d'incendie"],
+                "stop sign": ["panneau de signalisation"],
+                "bench": ["banquette", "siège"],
+                "elephant": ["pachyderme"],
+                "bear": ["plantigrade", "grizzly"],
+                "zebra": ["équidé"],
+                "giraffe": ["camélopard"],
+                "backpack": ["cartable", "sac à dos d'écolier"],
+                "umbrella": ["parasol", "parapluie de soleil"],
+                "handbag": ["sacoche", "sac"],
+                "tie": ["cravate", "nœud"],
+                "suitcase": ["valise", "bagage"],
+                "frisbee": ["disque", "disque volant"],
+                "skis": ["planches"],
+                "snowboard": ["planche"],
+                "sports ball": ["balle", "ballon de jeu"],
+                "kite": ["cerf-volant jouet"],
+                "baseball bat": ["batte", "bâton"],
+                "baseball glove": ["gant", "mitaine"],
+                "skateboard": ["planche à roulettes"],
+                "surfboard": ["planche de surf"],
+                "tennis racket": ["raquette", "raquette de tennis"],
+                "wine glass": ["verre à pied", "calice"],
+                "fork": ["couvert"],
+                "knife": ["couteau de table", "couvert"],
+                "spoon": ["couvert"],
+                "bowl": ["bol", "coupelle"],
+                "banana": ["fruit jaune"],
+                "sandwich": ["casse-croûte", "en-cas"],
+                "orange": ["agrume", "fruit"],
+                "broccoli": ["légume", "crucifère"],
+                "carrot": ["légume", "racine"],
+                "hot dog": ["sandwich chaud", "saucisse"],
+                "pizza": ["tarte", "galette"],
+                "donut": ["beignet", "pâtisserie"],
+                "cake": ["dessert", "pâtisserie"],
+                "couch": ["canapé", "divan"],
+                "potted plant": ["plante d'intérieur", "végétal"],
+                "bed": ["literie", "couchette"],
+                "dining table": ["table de repas"],
+                "toilet": ["sanitaire", "toilette"],
+                "tv": ["télé", "écran"],
+                "remote": ["télécommande", "contrôleur"],
+                "cell phone": ["smartphone", "téléphone mobile"],
+                "microwave": ["four à micro-ondes", "appareil électroménager"],
+                "oven": ["cuisinière", "four de cuisine"],
+                "toaster": ["appareil électroménager"],
+                "sink": ["lavabo", "vasque"],
+                "refrigerator": ["frigo", "réfrigérateur combiné"],
+                "clock": ["horloge murale", "pendule"],
+                "vase": ["récipient", "contenant"],
+                "scissors": ["ciseaux de couture", "outil de découpe"],
+                "teddy bear": ["jouet en peluche", "doudou"],
+                "hair dryer": ["sèche-cheveux", "séchoir"],
+                "toothbrush": ["brosse dentaire", "accessoire d'hygiène"]
             };
             
             if (synonyms[word] && synonyms[word].length > 0) {
                 const synItem = document.createElement('div');
                 synItem.className = 'additional-info';
                 synItem.innerHTML = `
-                    <span class="info-title">Synonyms:</span>
+                    <span class="info-title">Synonymes:</span>
                     <span class="info-content">${synonyms[word].join(', ')}</span>
                 `;
                 results.appendChild(synItem);
@@ -1055,7 +1106,7 @@
                 ctx.fillRect(bbox[0], bbox[1] - 30, Math.min(160, bbox[2]), 30);
                 ctx.fillStyle = '#ffffff';
                 ctx.font = 'bold 16px sans-serif';
-                ctx.fillText(`${translatedName} (${confidence}%)`, bbox[0] + 5, bbox[1] - 10);
+                ctx.fillText(`${translatedName}: ${objectName} (${confidence}%)`, bbox[0] + 5, bbox[1] - 10);
                 
                 // Store clickable area info
                 clickableAreas.push({
