@@ -170,7 +170,8 @@ const addSynonyms = (word) => {
         "teddy bear": ["jouet en peluche", "doudou"],
         "hair dryer": ["sèche-cheveux", "séchoir"],
         "toothbrush": ["brosse dentaire", "accessoire d'hygiène"],
-        "keyboard": ["clavier d'ordinateur", "input device", "peripherals"]
+        "keyboard": ["clavier d'ordinateur", "input device", "peripherals"],
+        "mouse": ["souris"]
     };
     
     if (synonyms[word] && synonyms[word].length > 0) {
@@ -263,7 +264,8 @@ const addExampleSentence = (word, translation) => {
         "teddy bear": ["The child sleeps with a teddy bear.", "L'enfant dort avec un ours en peluche."],
         "hair dryer": ["Dry your hair with the hair dryer.", "Sèche tes cheveux avec le sèche-cheveux."],
         "toothbrush": ["Brush your teeth with a toothbrush.", "Brosse-toi les dents avec une brosse à dents."],
-        "keyboard": ["The keyboard is wireless.", "Le clavier est sans fil."]
+        "keyboard": ["The keyboard is wireless.", "Le clavier est sans fil."],
+        "mouse": ["The mouse isn't working properly.", "La souris ne fonctionne pas correctement."]
     };
     
     if (examples[word]) {
@@ -359,7 +361,8 @@ const addAdditionalExampleSentence = (word, translation) => {
         "teddy bear": ["The teddy bear has one eye missing.", "L'ours en peluche a un œil manquant."],
         "hair dryer": ["The hair dryer is too noisy.", "Le sèche-cheveux est trop bruyant."],
         "toothbrush": ["Replace your toothbrush every three months.", "Remplacez votre brosse à dents tous les trois mois."],
-        "keyboard": ["I type my essays on the keyboard.", "Je tape mes essais sur le clavier."]
+        "keyboard": ["I type my essays on the keyboard.", "Je tape mes essais sur le clavier."],
+        "mouse": ["I need a wireless mouse for my laptop.", "J'ai besoin d'une souris sans fil pour mon ordinateur portable."]
     };
     
     if (examples[word]) {
@@ -455,7 +458,8 @@ const addRelatedWords = (word) => {
         "teddy bear": [["toy", "jouet"], ["doll", "poupée"], ["stuffed animal", "animal en peluche"]],
         "hair dryer": [["brush", "brosse"], ["appliance", "appareil"], ["bathroom", "salle de bain"]],
         "toothbrush": [["toothpaste", "dentifrice"], ["floss", "fil dentaire"], ["bathroom", "salle de bain"]],
-        "keyboard": [["computer", "ordinateur"], ["mouse", "souris"], ["screen", "écran"], ["laptop", "ordinateur portable"], ["typing", "taper"], ["keys", "touches"]]
+        "keyboard": [["computer", "ordinateur"], ["mouse", "souris"], ["screen", "écran"], ["laptop", "ordinateur portable"], ["typing", "taper"]],
+        "mouse": [["keyboard", "clavier"], ["trackpad", "pavé tactile"], ["computer", "ordinateur"]]
     };
     
     if (relatedWords[word]) {
