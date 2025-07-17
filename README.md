@@ -10,6 +10,6 @@ A web-based prototype of WordLens built with pure HTML, CSS, and JavaScript, usi
 
 ### Come with 3 different pop-up panels:
 
-1. Synonyms only: https://nateng98.github.io/WordLens/?panel=1
-2. Synonyms and an example sentence: https://nateng98.github.io/WordLens/?panel=2
-3. Synonyms, example sentences and related words: https://nateng98.github.io/WordLens/?panel=3
+1. Synonyms only: https://ng-nathan.github.io/WordLens/?panel=1
+2. Synonyms and an example sentence: https://ng-nathan.github.io/WordLens/?panel=2
+3. Synonyms, example sentences and related words: https://ng-nathan.github.io/WordLens/?panel=3
